@@ -4,4 +4,15 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.136.1",
+    "imbalanced-learn>=0.14.1",
+    "joblib>=1.5.3",
+    "numpy>=2.4.4",
+    "openai>=2.36.0",
+    "pandas>=3.0.3",
+    "python-dotenv>=1.2.2",
+    "scikit-learn>=1.8.0",
+    "tensorflow>=2.21.0",
+    "uvicorn>=0.46.0",
+]
