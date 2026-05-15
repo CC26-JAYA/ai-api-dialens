@@ -2,7 +2,7 @@ import os
 from openai import OpenAI
 from src.prompt import SYSTEM_PROMPT
 
-API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 
 
 def _fallback(risk_level):
