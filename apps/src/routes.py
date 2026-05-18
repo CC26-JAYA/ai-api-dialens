@@ -1,5 +1,5 @@
 import pandas as pd
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Response, status
 
 from .schemas import PatientInput, PredictResponse, FactorItem
 from .services import (
@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.get("/health")
-def health():
+def health(response: Response):
     artifact_status = get_artifact_status()
     ready = (
         artifact_status["model"]["ready"]
@@ -31,6 +31,7 @@ def health():
     )
     if not ready:
         status_text = "error"
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
         "status": status_text,
         "ready": ready,

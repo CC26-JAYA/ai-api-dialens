@@ -1,0 +1,13 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+notebooks/
+data/data_train_unscaled.csv

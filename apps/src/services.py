@@ -1,11 +1,16 @@
 import json
 import importlib.util
+import os
 import warnings
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
+
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+
 import tensorflow as tf
 
 from .explain import get_top_fallback_factors, get_top_risk_factors
