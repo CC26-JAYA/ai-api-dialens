@@ -1,8 +1,10 @@
 import os
 from openai import OpenAI
-from src.prompt import SYSTEM_PROMPT
+from dotenv import load_dotenv
 
-API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+from .prompt import SYSTEM_PROMPT
+
+load_dotenv()
 
 
 def _fallback(risk_level):
@@ -33,13 +35,12 @@ def _fallback(risk_level):
     return msgs.get(risk_level, msgs["Moderate"])
 
 
-def generate_recommendation(
-    patient_data, prob, risk_level, top_factors, api_key=API_KEY
-):
+def generate_recommendation(patient_data, prob, risk_level, top_factors, api_key=None):
     """
     Generate rekomendasi personal lewat Claude API.
     Kalo ga ada API key, balik ke rule-based fallback.
     """
+    api_key = api_key if api_key is not None else os.getenv("OPENROUTER_API_KEY", "")
     if not api_key:
         return _fallback(risk_level)
 
@@ -70,8 +71,9 @@ def generate_recommendation(
 
     try:
         client = OpenAI(
-            api_key=os.getenv("OPENROUTER_API_KEY"),
+            api_key=api_key,
             base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            timeout=15.0,
         )
         response = client.chat.completions.create(
             model="openai/gpt-oss-120b:free",

@@ -26,4 +26,5 @@ class PredictResponse(BaseModel):
     prediction       : int
     threshold_used   : float
     top_risk_factors : List[FactorItem]
+    explanation_method: str
     ai_recommendation: str
