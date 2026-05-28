@@ -5,30 +5,38 @@ from tensorflow.keras import layers
 
 class DenseBlock(keras.layers.Layer):
     """
-    Custom Layer: Dense + BatchNormalization + Dropout.
+    Custom Layer: Dense + BatchNormalization + ReLU + Dropout.
     Dengan optional Residual Connection untuk membantu gradient flow.
     """
 
-    def __init__(self, units, dropout_rate=0.3, use_residual=False, **kwargs):
+    def __init__(self, units, dropout_rate=0.2, use_residual=False, **kwargs):
         super().__init__(**kwargs)
         self.units = units
         self.dropout_rate = dropout_rate
         self.use_residual = use_residual
 
-        self.dense = layers.Dense(units, activation="relu")
+        self.dense = layers.Dense(units, activation=None)
         self.bn = layers.BatchNormalization()
+        self.relu = layers.Activation("relu")
         self.dropout = layers.Dropout(dropout_rate)
 
-        self.proj = layers.Dense(units, activation="relu") if use_residual else None
+        if use_residual:
+            self.proj = layers.Dense(units, activation=None, use_bias=False)
+            self.proj_bn = layers.BatchNormalization()
+        else:
+            self.proj = None
+            self.proj_bn = None
 
-    def call(self, inputs, training=None, mask=None):  # type: ignore
+    def call(self, inputs, training=False, mask=None):  # type: ignore
         out = self.dense(inputs)
-        out = self.bn(out, training=training or False)
-        out = self.dropout(out, training=training or False)
+        out = self.bn(out, training=training)
+        out = self.relu(out)
+        out = self.dropout(out, training=training)
 
         if self.use_residual and self.proj is not None:
-            x = self.proj(inputs)
-            out = out + x
+            shortcut = self.proj(inputs)
+            shortcut = self.proj_bn(shortcut, training=training)
+            out = out + shortcut
         return out
 
     def get_config(self):
@@ -46,28 +54,30 @@ class DenseBlock(keras.layers.Layer):
 class HealthClassifier(keras.Model):
     """
     Model Subclassing untuk binary health classification.
-    Arsitektur: 256 -> 128 (residual) -> 64 (residual) -> 32 -> 1
+    Arsitektur: 512 -> 256 (residual) -> 128 (residual) -> 64 -> 1
     """
 
     def __init__(self, input_dim, **kwargs):
         super().__init__(**kwargs)
         self.block1 = DenseBlock(
-            256, dropout_rate=0.4, use_residual=False, name="block1"
+            512, dropout_rate=0.30, use_residual=False, name="block1"
         )
         self.block2 = DenseBlock(
-            128, dropout_rate=0.3, use_residual=True, name="block2"
+            256, dropout_rate=0.20, use_residual=True, name="block2"
         )
-        self.block3 = DenseBlock(64, dropout_rate=0.2, use_residual=True, name="block3")
+        self.block3 = DenseBlock(
+            128, dropout_rate=0.10, use_residual=True, name="block3"
+        )
         self.block4 = DenseBlock(
-            32, dropout_rate=0.1, use_residual=False, name="block4"
+            64, dropout_rate=0.05, use_residual=False, name="block4"
         )
         self.out = layers.Dense(1, activation="sigmoid")
 
-    def call(self, inputs, training=None, mask=None):  # type: ignore
-        x = self.block1(inputs, training=training or False)
-        x = self.block2(x, training=training or False)
-        x = self.block3(x, training=training or False)
-        x = self.block4(x, training=training or False)
+    def call(self, inputs, training=False, mask=None):  # type: ignore
+        x = self.block1(inputs, training=training)
+        x = self.block2(x, training=training)
+        x = self.block3(x, training=training)
+        x = self.block4(x, training=training)
         return self.out(x)
 
     def get_config(self):

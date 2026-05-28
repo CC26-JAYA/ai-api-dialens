@@ -84,7 +84,7 @@ explainer = _load_joblib_artifact(ARTIFACTS_DIR / "shap_explainer.pkl", "explain
 if explainer is not None and not hasattr(explainer, "shap_values"):
     _artifact_warnings["explainer"].append(
         f"Loaded {type(explainer).__name__} has no shap_values API; "
-        "using runtime KernelExplainer instead."
+        "using runtime KernelExplainer instead if available."
     )
 
 try:
@@ -109,8 +109,12 @@ def _can_use_runtime_kernel_explainer():
     )
 
 
+def _has_artifact_explainer_api():
+    return explainer is not None and hasattr(explainer, "shap_values")
+
+
 def _explainability_ready():
-    return (explainer is not None and hasattr(explainer, "shap_values")) or (
+    return _has_artifact_explainer_api() or (
         _runtime_explainer_error is None and _can_use_runtime_kernel_explainer()
     )
 
@@ -164,6 +168,18 @@ def _predict_for_shap(values):
     return model(values, training=False).numpy().reshape(-1)
 
 
+def _normalize_shap_values(values):
+    if isinstance(values, list):
+        values = values[0]
+
+    values = np.asarray(values)
+    if values.ndim == 1:
+        values = values.reshape(1, -1)
+    if values.ndim == 3:
+        values = values[:, :, 0]
+    return values
+
+
 def _get_runtime_kernel_explainer():
     global _runtime_kernel_explainer, _runtime_explainer_error
     if _runtime_kernel_explainer is not None:
@@ -192,10 +208,12 @@ def explain_scaled_input(scaled_input):
     global _runtime_explainer_error
 
     if explainer is not None and hasattr(explainer, "shap_values"):
-        sv = explainer.shap_values(scaled_input)
-        if isinstance(sv, list):
-            sv = sv[0]
-        return get_top_risk_factors(sv[0], FEATURES), "shap"
+        try:
+            sv = explainer.shap_values(scaled_input)
+            sv = _normalize_shap_values(sv)
+            return get_top_risk_factors(sv[0], FEATURES), "shap"
+        except Exception as e:
+            _artifact_errors["explainer"] = str(e)
 
     runtime_explainer = _get_runtime_kernel_explainer()
     if runtime_explainer is not None:
@@ -205,11 +223,7 @@ def explain_scaled_input(scaled_input):
                 nsamples=50,
                 silent=True,
             )
-            if isinstance(sv, list):
-                sv = sv[0]
-            sv = np.asarray(sv)
-            if sv.ndim == 3:
-                sv = sv[:, :, 0]
+            sv = _normalize_shap_values(sv)
             return get_top_risk_factors(sv[0], FEATURES), "shap_kernel_runtime"
         except Exception as e:
             _runtime_explainer_error = str(e)
@@ -221,8 +235,8 @@ def explain_scaled_input(scaled_input):
 
 
 def label_risk(prob: float) -> str:
-    if prob < 0.45:
+    if prob < 0.35:
         return "Low"
-    elif prob < 0.60:
+    elif prob < 0.65:
         return "Moderate"
     return "High"

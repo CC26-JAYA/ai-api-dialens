@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -26,6 +27,8 @@ app.add_middleware(
 
 app.include_router(router)
 
+logger = logging.getLogger("dialens")
+
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -43,6 +46,16 @@ async def scalar_html():
         openapi_url=app.openapi_url,
         title=f"{app.title} - API Docs",
     )
+
+
+@app.on_event("startup")
+async def log_startup():
+    logger.warning(
+        "DiaLens ready on port %s with routes: %s",
+        os.getenv("PORT", "8000"),
+        [route.path for route in app.routes],
+    )
+
 
 if __name__ == "__main__":
     uvicorn.run(
