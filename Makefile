@@ -1,4 +1,4 @@
-.PHONY: help sync run dev smoke health features scalar predict-sample check
+.PHONY: help sync run dev smoke health ready features scalar predict-sample check
 
 HOST ?= 0.0.0.0
 PORT ?= 8000
@@ -11,6 +11,7 @@ help:
 	@echo "  make dev             Run API with auto-reload"
 	@echo "  make smoke           Run direct end-to-end smoke check"
 	@echo "  make health          Call /health on a running server"
+	@echo "  make ready           Call /ready on a running server"
 	@echo "  make features        Call /features on a running server"
 	@echo "  make scalar          Show Scalar API docs URL"
 	@echo "  make predict-sample  Call /predict with sample payload"
@@ -30,6 +31,9 @@ smoke:
 
 health:
 	curl -sS $(BASE_URL)/health
+
+ready:
+	curl -sS $(BASE_URL)/ready
 
 features:
 	curl -sS $(BASE_URL)/features

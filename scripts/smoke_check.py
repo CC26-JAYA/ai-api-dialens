@@ -10,7 +10,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from fastapi import Response
 
-from apps.src.routes import features, health, predict
+from apps.src.routes import features, health, predict, ready
 from apps.src.schemas import PatientInput
 
 
@@ -25,6 +25,12 @@ def main():
     )
     if health_response.status_code >= 400 or not health_payload["ready"]:
         raise SystemExit(f"core inference is not ready: {health_payload['artifacts']}")
+
+    ready_response = Response()
+    ready_payload = ready(ready_response)
+    print("ready:", ready_payload["status"], f"ready={ready_payload['ready']}")
+    if ready_response.status_code >= 400 or not ready_payload["ready"]:
+        raise SystemExit(f"strict readiness failed: {ready_payload['artifacts']}")
 
     feature_payload = features()
     print("features:", len(feature_payload["features"]))

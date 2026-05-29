@@ -18,8 +18,7 @@ from .llm import generate_recommendation
 router = APIRouter()
 
 
-@router.get("/health")
-def health(response: Response):
+def _artifact_health_payload():
     artifact_status = get_artifact_status()
     ready = (
         artifact_status["model"]["ready"]
@@ -31,7 +30,6 @@ def health(response: Response):
     )
     if not ready:
         status_text = "error"
-        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
         "status": status_text,
         "ready": ready,
@@ -40,6 +38,19 @@ def health(response: Response):
         "params": int(model.count_params()) if model is not None else 0,
         "artifacts": artifact_status,
     }
+
+
+@router.get("/health")
+def health(response: Response):
+    return _artifact_health_payload()
+
+
+@router.get("/ready")
+def ready(response: Response):
+    payload = _artifact_health_payload()
+    if not payload["ready"]:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return payload
 
 
 @router.get("/features")

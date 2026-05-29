@@ -15,6 +15,7 @@ if __package__ in {None, ""}:
         sys.path.insert(0, str(ROOT_DIR))
 
 from apps.src.routes import router
+from apps.src.services import get_artifact_status
 
 app = FastAPI(title="DiaLens API", version="1.0.0")
 
@@ -37,6 +38,7 @@ async def root():
         "service": app.title,
         "docs": "/scalar",
         "health": "/health",
+        "ready": "/ready",
     }
 
 
@@ -50,10 +52,19 @@ async def scalar_html():
 
 @app.on_event("startup")
 async def log_startup():
+    artifact_status = get_artifact_status()
+    core_ready = all(
+        artifact_status[name]["ready"] for name in ("model", "scaler", "threshold")
+    )
     logger.warning(
         "DiaLens ready on port %s with routes: %s",
         os.getenv("PORT", "8000"),
         [route.path for route in app.routes],
+    )
+    logger.warning(
+        "DiaLens artifact status: core_ready=%s details=%s",
+        core_ready,
+        artifact_status,
     )
 
 

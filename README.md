@@ -39,6 +39,14 @@ uv run python apps/main.py
 
 Once running, you can access the API documentation at [http://localhost:8000/scalar](http://localhost:8000/scalar).
 
+## Health Checks
+
+- `/health` is the liveness endpoint used by Railway. It returns HTTP 200
+  when the FastAPI service is running, and includes artifact status in the
+  response body.
+- `/ready` is the strict inference readiness endpoint. It returns HTTP 503
+  if the model, scaler, or threshold artifact cannot be loaded.
+
 ## Smoke Check
 
 ```bash
