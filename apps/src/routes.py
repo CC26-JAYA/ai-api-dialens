@@ -109,7 +109,13 @@ def predict(p: PatientInput):
 
         # 5. LLM → recommendation text
         patient_dict = p.model_dump()
-        rec = generate_recommendation(patient_dict, prob, risk, factors)
+        rec = generate_recommendation(
+            patient_dict,
+            prob,
+            risk,
+            factors,
+            explanation_method=explanation_method,
+        )
 
         return PredictResponse(
             probability=round(prob, 4),
