@@ -1,7 +1,7 @@
 # DiaLens API
 
 FastAPI service for diabetes risk screening with TensorFlow inference,
-feature scaling, explainability, and Indonesian health recommendations.
+feature scaling, explainability, and Indonesian health recommendations also list of hospitals.
 
 ## Prerequisites
 
